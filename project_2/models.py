@@ -205,7 +205,7 @@ class SmoothClassifier(nn.Module):
                 ##########################################################
                 # YOUR CODE HERE
                 num_remaining -= this_batch_size
-                batch= x.repeat((this_batch_size,1,1,1))
+                batch= inputs.repeat((this_batch_size,1,1,1))
                 prediction_class=self.forward(batch).argmax(1) #returns array [len(batch_size)] with each entry being the index of maximum value, i.e., class.
             
                 for i in prediction_class.numpy():
