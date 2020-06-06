@@ -45,7 +45,7 @@ def train_model(model: nn.Module, dataset: Dataset, batch_size: int, loss_functi
         for x,y in tqdm(iter(train_loader), total=num_train_batches):
             ##########################################################
             # YOUR CODE HERE
-            x = x.type(torch.cuda.FloatTensor)
+            x = x.to(model.device())
             loss,logits = loss_function(x,y,model,**loss_args)
             optimizer.zero_grad()
             loss.backward()
@@ -92,7 +92,7 @@ def predict_model(model: nn.Module, dataset: Dataset, batch_size: int, attack_fu
     for x, y in tqdm(iter(test_loader), total=num_batches):
         ##########################################################
         # YOUR CODE HERE
-        x = x.type(torch.cuda.FloatTensor)
+        x = x.to(model.device())
         x.requires_grad = True
         logits = model(x).cpu()
         model.zero_grad()
