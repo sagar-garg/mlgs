@@ -6,7 +6,6 @@ from scipy.stats import norm, binom_test
 from torch import nn
 from statsmodels.stats.proportion import proportion_confint
 
-
 class ConvNN(nn.Module):
     """
     A simple convolutional neural network for image classification on MNIST.
@@ -125,7 +124,7 @@ class SmoothClassifier(nn.Module):
         top_class = class_counts.argmax().item()
         top_class_count = class_counts_for_certificate[top_class].item()
         
-        p_A_lower_bound = self._lower_confidence_bound(top_class_count, num_samples, alpha)
+        p_A_lower_bound = lower_confidence_bound(top_class_count, num_samples, alpha)
         ##########################################################
 
         if p_A_lower_bound < 0.5:
@@ -165,16 +164,17 @@ class SmoothClassifier(nn.Module):
         ##########################################################
         # YOUR CODE HERE
         
-        descending_arranged = class_counts.argsort()[::-1]
-        count1 = counts[descending_arranged[0]]
-        count2 = counts[descending_arranged[1]]
+        descending_arranged = (-class_counts).argsort()[:2] #minus for reverse sorting
+        count1 = class_counts[descending_arranged[0]]
+        count2 = class_counts[descending_arranged[1]]
         if binom_test(count1, count1 + count2, p=0.5) > alpha:
-            return Smooth.ABSTAIN
+            return SmoothClassifier.ABSTAIN
         else:
             return descending_arranged[0]
         
         ##########################################################
-
+    
+    
     def _sample_noise_predictions(self, inputs: torch.tensor, num_samples: int, batch_size: int) -> torch.Tensor:
         """
         Sample random noise perturbations for the input sample and count the predicted classes of the base classifier.
@@ -207,13 +207,18 @@ class SmoothClassifier(nn.Module):
                 num_remaining -= this_batch_size
                 batch= inputs.repeat((this_batch_size,1,1,1))
                 prediction_class=self.forward(batch).argmax(1) #returns array [len(batch_size)] with each entry being the index of maximum value, i.e., class.
-            
-                for i in prediction_class.numpy():
-                    class_counts[i] +=1            
+
+                #class_counts += self._count_arr(prediction_class.cpu().numpy(), self.num_classes)
+                
+                class_count_this_batch= torch.zeros([self.num_classes], dtype=torch.long, device=self.device())           
+                for i in prediction_class.cpu().numpy():
+                    class_count_this_batch[i] +=1
+
+                class_counts += class_count_this_batch                
                 ##########################################################
         return class_counts
-
     
+       
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
         Make a single prediction for the input batch using the base classifier and random Gaussian noise.
