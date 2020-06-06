@@ -125,7 +125,7 @@ class SmoothClassifier(nn.Module):
         top_class = class_counts.argmax().item()
         top_class_count = class_counts_for_certificate[top_class].item()
         
-        p_A_lower_bound = self._lower_confidence_bound(top_class_count, num_samples, alpha)
+        p_A_lower_bound = lower_confidence_bound(top_class_count, num_samples, alpha)
         ##########################################################
 
         if p_A_lower_bound < 0.5:
@@ -165,11 +165,11 @@ class SmoothClassifier(nn.Module):
         ##########################################################
         # YOUR CODE HERE
         
-        descending_arranged = class_counts.argsort()[::-1]
-        count1 = counts[descending_arranged[0]]
-        count2 = counts[descending_arranged[1]]
+        descending_arranged = (-class_counts).argsort()[:2] #minus for reverse sorting
+        count1 = class_counts[descending_arranged[0]]
+        count2 = class_counts[descending_arranged[1]]
         if binom_test(count1, count1 + count2, p=0.5) > alpha:
-            return Smooth.ABSTAIN
+            return SmoothClassifier.ABSTAIN
         else:
             return descending_arranged[0]
         
@@ -208,7 +208,7 @@ class SmoothClassifier(nn.Module):
                 batch= inputs.repeat((this_batch_size,1,1,1))
                 prediction_class=self.forward(batch).argmax(1) #returns array [len(batch_size)] with each entry being the index of maximum value, i.e., class.
             
-                for i in prediction_class.numpy():
+                for i in prediction_class.cpu().numpy():
                     class_counts[i] +=1            
                 ##########################################################
         return class_counts
