@@ -160,22 +160,34 @@ def evaluate_robustness_smoothing(base_classifier: nn.Module, sigma: float, data
         ##########################################################
         # YOUR CODE HERE
         x = x.to(model.device())
-    
-        for i in range(x.shape[0]):
-            x1=x[i,...].reshape((1,x.shape[1], x.shape[2], x.shape[3]))
-            y1=y[i]
+        pred=model.predict(x, num_samples_1, alpha, batch_size=128)
+        top_class, radius=model.certify(x, num_samples_1, num_samples_2, alpha, batch_size=certification_batch_size)
         
-            pred=model.predict(x1, num_samples_1, alpha, batch_size=128)
-            top_class, radius=model.certify(x1, num_samples_1, num_samples_2, alpha, batch_size=certification_batch_size)
-        
-            if top_class==-1: #cant certify
+        if top_class==-1: #cant certify
                 abstains +=1
         
-            elif pred==y1:  #can certify and is correct
+        elif pred==y:  #can certify and is correct
                 correct_certified +=1
                 radii.append(radius)
-            else:
+        else:
                 false_predictions +=1 #can certify but is incorrect
+                radii.append(0)
+        # for i in range(x.shape[0]):
+        #     x1=x[i,...].reshape((1,x.shape[1], x.shape[2], x.shape[3]))
+        #     y1=y[i]
+        
+        #     pred=model.predict(x1, num_samples_1, alpha, batch_size=certification_batch_size)
+        #     top_class, radius=model.certify(x1, num_samples_1, num_samples_2, alpha, batch_size=certification_batch_size)
+        
+        #     if top_class==-1: #cant certify
+        #         abstains +=1
+        
+        #     elif pred==y1:  #can certify and is correct
+        #         correct_certified +=1
+        #         radii.append(radius)
+        #     else:
+        #         false_predictions +=1 #can certify but is incorrect
+        #         radii.append(radius)
         
         ##########################################################
     avg_radius = torch.tensor(radii).mean().item()
